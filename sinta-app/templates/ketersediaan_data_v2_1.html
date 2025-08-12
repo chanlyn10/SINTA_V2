@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Monitoring Ketersediaan Data MKG (SINTA) BMKG V2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Catatan: file static/css/style.css dan images/logo_bmkg.png tidak disertakan -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        .header-custom-blue {
+            background-color: #004d9c;
+        }
+        .bmkg-logo {
+            height: 40px;
+        }
+        .nav-link.active {
+            color: #0d6efd !important;
+            border-bottom: 2px solid #0d6efd;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .table-daily-ketersediaan th, .table-daily-ketersediaan td {
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-custom-blue text-white p-3 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Sistem Monitoring Ketersediaan Data MKG (SINTA) BMKG</h4>
+            <div class="d-flex align-items-center">
+                <a href="#" class="text-white text-decoration-none">
+                    admin.mdm
+                </a>
+                <img src="https://via.placeholder.com/40x40.png?text=Logo" alt="BMKG Logo" class="bmkg-logo ms-2">
+            </div>
+        </div>
+        <div class="bg-white shadow-sm p-2">
+            <nav class="nav">
+                <a class="nav-link text-secondary" href="/"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
+                <a class="nav-link text-secondary" href="#">Metadata</a>
+                <a class="nav-link text-secondary" href="#">Ketersediaan Data v1</a>
+                <a class="nav-link active" href="/ketersediaan_data_v2"><i class="fas fa-database me-1"></i>Ketersediaan Data v2</a>
+                <a class="nav-link text-secondary" href="#">Profile</a>
+                <a class="nav-link text-secondary" href="#">Tentang</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container-fluid mt-4">
+        <h3 class="fw-bold mb-4">Data Availability</h3>
+    </div>
+
+    <div class="container-fluid mt-3">
+        <div class="card p-3 mb-3">
+            <div class="row align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">REGION</label>
+                    <select class="form-select" id="select-region">
+                        <option value="" selected disabled>-- Pilih Region --</option>
+                        {% for region_id in region_list %}
+                        <option value="{{ region_id }}">Balai {{ region_id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">WMOID</label>
+                    <select class="form-select" id="select-wmoid" disabled>
+                        <option value="" selected>-- Pilih WMOID --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Form</label>
+                    <select class="form-select" id="select-form">
+                        <option selected>FKLIM</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Parameter</label>
+                    <select class="form-select" id="select-parameter">
+                        <option value="average" selected>Rata-rata</option>
+                        <option value="temp_07lt_c">temp_07lt_c</option>
+                        <option value="temp_13lt_c">temp_13lt_c</option>
+                        <option value="temp_18lt_c">temp_18lt_c</option>
+                        <option value="temp_avg_c">temp_avg_c</option>
+                        <option value="temp_max_c">temp_max_c</option>
+                        <option value="temp_min_c">temp_min_c</option>
+                        <option value="rainfall_mm">rainfall_mm</option>
+                        <option value="sunshine_h">sunshine_h</option>
+                        <option value="weather_specific">weather_specific</option>
+                        <option value="pressure_mb">pressure_mb</option>
+                        <option value="rel_humidity_07lt_pc">rel_humidity_07lt_pc</option>
+                        <option value="rel_humidity_13lt_pc">rel_humidity_13lt_pc</option>
+                        <option value="rel_humidity_18lt_pc">rel_humidity_18lt_pc</option>
+                        <option value="rel_humidity_avg_pc">rel_humidity_avg_pc</option>
+                        <option value="wind_speed_avg_km_h">wind_speed_avg_km_h</option>
+                        <option value="wind_dir_max">wind_dir_max</option>
+                        <option value="wind_speed_max_knots">wind_speed_max_knots</option>
+                        <option value="wind_dir_cardinal">wind_dir_cardinal</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Rentang Waktu</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="waktu_option" id="seluruhDataRadio" value="seluruhData" checked>
+                        <label class="form-check-label" for="seluruhDataRadio">Seluruh Data</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="waktu_option" id="pilihTahunRadio" value="pilihTahun">
+                        <label class="form-check-label" for="pilihTahunRadio">Pilih Tahun :</label>
+                    </div>
+                    <select class="form-select form-select-sm mb-2" id="tahun-select" disabled>
+                        <option value="" selected>-- Pilih Tahun --</option>
+                        {% for year in years_list %}
+                        <option value="{{ year }}">{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="waktu_option" id="rentangWaktuRadio" value="rentangWaktu">
+                        <label class="form-check-label" for="rentangWaktuRadio">Pilih Rentang Waktu :</label>
+                    </div>
+                    <input type="text" class="form-control form-control-sm mb-1" id="start-date" placeholder="yyyy-mm-dd" disabled>
+                    <input type="text" class="form-control form-control-sm" id="end-date" placeholder="yyyy-mm-dd" disabled>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="search-button">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading-spinner" class="text-center my-5 d-none">
+            <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+            <p class="mt-2 text-muted">Memuat data...</p>
+        </div>
+
+        <div class="card p-3 mb-3 d-none" id="chart-card">
+            <h5 class="text-center fw-bold" id="chart-title"></h5>
+            <div class="chart-container">
+                <canvas id="availabilityChart"></canvas>
+                <div id="no-data-chart" class="text-center text-muted d-none p-5">
+                    Data tidak tersedia untuk pilihan ini.
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-3 mb-3 d-none" id="table-card">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="data-table">
+                    <thead id="table-head">
+                    </thead>
+                    <tbody id="table-body">
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <button id="download-table-btn" class="btn btn-secondary d-none">
+                    <i class="fas fa-download me-2"></i>Download Tabel
+                </button>
+            </div>
+            <div id="no-data-table" class="text-center text-muted d-none p-3">
+                Data tidak tersedia untuk pilihan ini.
+            </div>
+        </div>
+
+        <!-- New Daily Data Table Container -->
+        <div id="daily-table-container" class="card p-3 mb-3 d-none">
+            <h5 class="text-center fw-bold">Ketersediaan Data Harian</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-daily-ketersediaan" id="daily-table">
+                    <thead id="daily-table-head"></thead>
+                    <tbody id="daily-table-body"></tbody>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <button id="download-daily-table-btn" class="btn btn-secondary d-none">
+                    <i class="fas fa-download me-2"></i>Download Data Harian
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer mt-auto py-3 bg-light text-muted">
+        <div class="container-fluid d-flex justify-content-between">
+            <div>© DDK2025</div>
+            <div>SINTA BMKG 2.0</div>
+        </div>
+    </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentChart;
+            
+            // Variabel untuk menyimpan data yang dibutuhkan untuk tabel harian
+            let globalState = {
+                station: null,
+                tahun: null,
+                parameter: null,
+                monthLabels: null,
+                selectedMonth: null
+            };
+
+            // Array warna baru untuk grafik
+            const barColors = [
+                '#96d3f2', '#f296a8', '#f2d396', '#96f2d3', '#a896f2', '#f2a896',
+                '#96d3f2', '#f296a8', '#f2d396', '#96f2d3', '#a896f2', '#f2a896'
+            ];
+            
+            async function downloadPDF() {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const margin = 10;
+                let y = margin;
+                
+                // Add title
+                pdf.setFontSize(16);
+                pdf.text(document.title, margin, y);
+                y += 10;
+                
+                // Add filters
+                pdf.setFontSize(10);
+                pdf.text(`Region: ${document.getElementById('select-region').value}`, margin, y);
+                pdf.text(`WMOID: ${document.getElementById('select-wmoid').value}`, 80, y);
+                y += 5;
+                pdf.text(`Parameter: ${document.getElementById('select-parameter').value}`, margin, y);
+                pdf.text(`Tahun: ${globalState.tahun}`, 80, y);
+                y += 10;
+
+                // Add chart
+                const chartCanvas = document.getElementById('availabilityChart');
+                if (chartCanvas && chartCanvas.offsetParent !== null) {
+                    const canvasImg = chartCanvas.toDataURL('image/png');
+                    const imgWidth = 190; // A4 width minus margins
+                    const imgHeight = chartCanvas.height * imgWidth / chartCanvas.width;
+                    pdf.addImage(canvasImg, 'PNG', margin, y, imgWidth, imgHeight);
+                    y += imgHeight + 10;
+                }
+
+                // Add main table
+                const mainTable = document.getElementById('table-card');
+                if (mainTable && mainTable.offsetParent !== null) {
+                    const canvas = await html2canvas(mainTable, { scale: 2 });
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 190;
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    if (y + imgHeight > 280) { // Check for page overflow
+                        pdf.addPage();
+                        y = margin;
+                    }
+                    pdf.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+                    y += imgHeight + 10;
+                }
+
+                // Add daily table if visible
+                const dailyTableContainer = document.getElementById('daily-table-container');
+                if (dailyTableContainer && dailyTableContainer.offsetParent !== null) {
+                    const canvas = await html2canvas(dailyTableContainer, { scale: 2 });
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 190;
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    if (y + imgHeight > 280) {
+                        pdf.addPage();
+                        y = margin;
+                    }
+                    pdf.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+                }
+
+                pdf.save('SINTA-Data-Availability.pdf');
+            }
+
+
+            /**
+             * Creates or updates the Chart.js chart with new data.
+             * @param {string[]} labels - The labels for the chart.
+             * @param {number[]} data - The data points for the chart.
+             * @param {string} title - The title of the chart.
+             * @param {string} chartType - The type of chart ('bar' or 'line').
+             * @param {string} waktuOption - The time option for click handler.
+             */
+            function createChart(labels, data, title, chartType, waktuOption) {
+                const ctx = document.getElementById('availabilityChart').getContext('2d');
+                if (currentChart) {
+                    currentChart.destroy();
+                }
+                
+                const chartOptions = {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Persentase'
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                };
+
+                // Hanya tambahkan handler klik untuk bar chart bulanan
+                if (chartType === 'bar' && waktuOption === 'pilihTahun') {
+                    chartOptions.onClick = function(event, elements) {
+                        if (elements.length > 0) {
+                            const barIndex = elements[0].index;
+                            const monthLabel = this.data.labels[barIndex];
+                            
+                            globalState.selectedMonth = monthLabel;
+                            fetchDailyData(globalState.station, globalState.tahun, monthLabel, globalState.parameter);
+                        }
+                    };
+                }
+
+                currentChart = new Chart(ctx, {
+                    type: chartType,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Persentase',
+                            data: data,
+                            backgroundColor: chartType === 'bar' ? barColors : 'rgba(75, 192, 192, 0.8)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1,
+                            fill: chartType === 'line',
+                            tension: 0.4
+                        }]
+                    },
+                    options: chartOptions
+                });
+                document.getElementById('chart-title').innerText = title;
+            }
+            
+            /**
+             * Fetches and renders daily data for a specific month.
+             * @param {string} stationId - The selected station ID.
+             * @param {string} tahun - The selected year.
+             * @param {string} bulanLabel - The selected month name.
+             * @param {string} parameter - The selected parameter.
+             */
+            async function fetchDailyData(stationId, tahun, bulanLabel, parameter) {
+                const dailyTableContainer = document.getElementById('daily-table-container');
+                const dailyTableHead = document.getElementById('daily-table-head');
+                const dailyTableBody = document.getElementById('daily-table-body');
+                
+                dailyTableContainer.classList.add('d-none');
+                loadingSpinner.classList.remove('d-none');
+
+                try {
+                    const response = await fetch('/api/get_daily_data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            station: stationId, 
+                            tahun: tahun, 
+                            bulan: bulanLabel, 
+                            parameter: parameter 
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.error) {
+                        alert(result.error);
+                        return;
+                    }
+
+                    renderDailyTable(result.table_data, result.headers);
+                    dailyTableContainer.classList.remove('d-none');
+                    document.getElementById('download-daily-table-btn').classList.remove('d-none');
+
+                } catch (error) {
+                    console.error('Error fetching daily data:', error);
+                    alert('Terjadi kesalahan saat memuat data harian.');
+                } finally {
+                    loadingSpinner.classList.add('d-none');
+                }
+            }
+
+            /**
+             * Renders the data table with dynamic headers and rows.
+             * @param {object[]} tableData - An array of objects representing the table data.
+             * @param {string} timeOption - The selected time option ('pilihTahun', 'seluruhData', etc.).
+             * @param {string} tahun - The selected year.
+             */
+            function renderTable(tableData, timeOption, tahun) {
+                const tableHead = document.getElementById('table-head');
+                const tableBody = document.getElementById('table-body');
+                tableHead.innerHTML = '';
+                tableBody.innerHTML = '';
+
+                if (tableData.length === 0) {
+                    document.getElementById('no-data-table').classList.remove('d-none');
+                    document.getElementById('download-table-btn').classList.add('d-none');
+                    return;
+                }
+
+                document.getElementById('no-data-table').classList.add('d-none');
+                document.getElementById('download-table-btn').classList.remove('d-none');
+
+                if (timeOption === 'pilihTahun') {
+                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    let headerHtml = '<tr><th>Tahun</th>';
+                    months.forEach(month => {
+                        headerHtml += `<th>${month}</th>`;
+                    });
+                    headerHtml += '</tr>';
+                    tableHead.innerHTML = headerHtml;
+
+                    let rowHtml = `<tr><td>${tahun}</td>`;
+                    const monthlyData = {};
+                    tableData.forEach(item => {
+                        monthlyData[item.Bulan] = item.Persentase || item['Persentase Rata-rata'];
+                    });
+
+                    months.forEach(month => {
+                        rowHtml += `<td>${monthlyData[month] || '0.00%'}</td>`;
+                    });
+                    rowHtml += '</tr>';
+                    tableBody.innerHTML = rowHtml;
+
+                } else {
+                    const headers = Object.keys(tableData[0]);
+                    let headerHtml = '<tr>';
+                    headers.forEach(header => {
+                        headerHtml += `<th>${header}</th>`;
+                    });
+                    headerHtml += '</tr>';
+                    tableHead.innerHTML = headerHtml;
+
+                    tableData.forEach(rowData => {
+                        let rowHtml = '<tr>';
+                        headers.forEach(header => {
+                            rowHtml += `<td>${rowData[header]}</td>`;
+                        });
+                        rowHtml += '</tr>';
+                        tableBody.innerHTML += rowHtml;
+                    });
+                }
+            }
+
+            /**
+             * Renders the daily data table.
+             * @param {object[]} tableData - Array of objects with daily data.
+             * @param {string[]} headers - Array of table headers.
+             */
+            function renderDailyTable(tableData, headers) {
+                const dailyTableHead = document.getElementById('daily-table-head');
+                const dailyTableBody = document.getElementById('daily-table-body');
+                dailyTableHead.innerHTML = '';
+                dailyTableBody.innerHTML = '';
+                
+                // Create header row
+                let headerHtml = '<tr>';
+                headers.forEach(header => {
+                    headerHtml += `<th>${header}</th>`;
+                });
+                headerHtml += '</tr>';
+                dailyTableHead.innerHTML = headerHtml;
+
+                // Create data rows
+                tableData.forEach(rowData => {
+                    let rowHtml = '<tr>';
+                    headers.forEach(header => {
+                        rowHtml += `<td>${rowData[header]}</td>`;
+                    });
+                    rowHtml += '</tr>';
+                    dailyTableBody.innerHTML += rowHtml;
+                });
+            }
+
+
+            // --- Form Element References ---
+            const selectRegion = document.getElementById('select-region');
+            const selectWmoid = document.getElementById('select-wmoid');
+            const selectParameter = document.getElementById('select-parameter');
+            const seluruhDataRadio = document.getElementById('seluruhDataRadio');
+            const pilihTahunRadio = document.getElementById('pilihTahunRadio');
+            const rentangWaktuRadio = document.getElementById('rentangWaktuRadio');
+            const tahunSelect = document.getElementById('tahun-select');
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            const searchButton = document.getElementById('search-button');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const chartCard = document.getElementById('chart-card');
+            const tableCard = document.getElementById('table-card');
+            const noDataChartMessage = document.getElementById('no-data-chart');
+            const dailyTableContainer = document.getElementById('daily-table-container');
+            const downloadTableBtn = document.getElementById('download-table-btn');
+            const downloadDailyTableBtn = document.getElementById('download-daily-table-btn');
+
+
+            // --- Event Listeners and Logic ---
+            
+            // Logika untuk mengaktifkan/menonaktifkan input waktu
+            function updateTimeInputs() {
+                tahunSelect.disabled = !pilihTahunRadio.checked;
+                startDateInput.disabled = !rentangWaktuRadio.checked;
+                endDateInput.disabled = !rentangWaktuRadio.checked;
+            }
+            seluruhDataRadio.addEventListener('change', updateTimeInputs);
+            pilihTahunRadio.addEventListener('change', updateTimeInputs);
+            rentangWaktuRadio.addEventListener('change', updateTimeInputs);
+            updateTimeInputs();
+            
+            // Inisialisasi Flatpickr
+            flatpickr("#start-date", { dateFormat: "Y-m-d" });
+            flatpickr("#end-date", { dateFormat: "Y-m-d" });
+
+            // Logika dinamis untuk dropdown WMOID
+            selectRegion.addEventListener('change', function() {
+                const regionId = this.value;
+                if (regionId) {
+                    selectWmoid.disabled = false;
+                    selectWmoid.innerHTML = '<option value="" selected disabled>Memuat...</option>';
+                    
+                    fetch(`/api/get_stations/${regionId}`)
+                        .then(response => response.json())
+                        .then(stations => {
+                            selectWmoid.innerHTML = '<option value="" selected disabled>-- Pilih WMOID --</option>';
+                            if (stations.length > 0) {
+                                stations.forEach(station => {
+                                    const option = document.createElement('option');
+                                    option.value = station.id;
+                                    option.innerText = `Balai ${regionId} - ${station.id} - ${station.name}`;
+                                    selectWmoid.appendChild(option);
+                                });
+                            } else {
+                                const option = document.createElement('option');
+                                option.selected = true;
+                                option.innerText = 'Tidak ada stasiun';
+                                selectWmoid.appendChild(option);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching stations:', error);
+                            selectWmoid.innerHTML = '<option value="" selected disabled>Gagal memuat</option>';
+                        });
+                } else {
+                    selectWmoid.disabled = true;
+                    selectWmoid.innerHTML = '<option value="" selected disabled>-- Pilih WMOID --</option>';
+                }
+            });
+
+            // Logika tombol Search
+            searchButton.addEventListener('click', function() {
+                const region = selectRegion.value;
+                const station = selectWmoid.value;
+                const parameter = selectParameter.value;
+                const waktuOption = document.querySelector('input[name="waktu_option"]:checked').value;
+                const tahun = tahunSelect.value;
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+
+                if (!region || !station || !parameter || 
+                    (waktuOption === 'pilihTahun' && tahun === '') || 
+                    (waktuOption === 'rentangWaktu' && (startDate === '' || endDate === ''))) {
+                    alert('Semua filter harus diisi!');
+                    return;
+                }
+
+                loadingSpinner.classList.remove('d-none');
+                chartCard.classList.add('d-none');
+                tableCard.classList.add('d-none');
+                dailyTableContainer.classList.add('d-none');
+                noDataChartMessage.classList.add('d-none');
+                downloadTableBtn.classList.add('d-none');
+                downloadDailyTableBtn.classList.add('d-none');
+
+                const postData = {
+                    station: station,
+                    parameter: parameter,
+                    time_option: waktuOption,
+                    tahun: tahun,
+                    start_date: startDate,
+                    end_date: endDate
+                };
+                
+                // Simpan state global
+                globalState.station = station;
+                globalState.tahun = tahun;
+                globalState.parameter = parameter;
+
+                fetch('/api/ketersediaan_data_v2/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(postData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingSpinner.classList.add('d-none');
+
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    const stationName = selectWmoid.options[selectWmoid.selectedIndex].text;
+                    let chartTitle = '';
+                    let chartType;
+                    const paramName = selectParameter.options[selectParameter.selectedIndex].text;
+
+                    // Menentukan tipe grafik berdasarkan opsi waktu
+                    if (data.time_option === 'pilihTahun' || data.time_option === 'seluruhData') {
+                        chartType = 'bar';
+                        if (data.time_option === 'pilihTahun') {
+                           chartTitle = `Persentase Ketersediaan Data Bulanan Tahun ${data.tahun} (${paramName})`;
+                        } else {
+                           chartTitle = `Persentase Ketersediaan Data Tahunan (${paramName})`;
+                        }
+                    } else {
+                        chartType = 'line';
+                        chartTitle = `Persentase Ketersediaan Data Harian (${paramName})`;
+                    }
+                    
+                    if (data.chart_data && data.chart_data.data.length > 0) {
+                        chartCard.classList.remove('d-none');
+                        noDataChartMessage.classList.add('d-none');
+                        createChart(data.chart_data.labels, data.chart_data.data, chartTitle, chartType, data.time_option);
+                    } else {
+                        if (currentChart) currentChart.destroy();
+                        chartCard.classList.remove('d-none');
+                        noDataChartMessage.classList.remove('d-none');
+                    }
+
+                    tableCard.classList.remove('d-none');
+                    if (data.table_data && data.table_data.length > 0) {
+                        renderTable(data.table_data, data.time_option, data.tahun);
+                    } else {
+                        document.getElementById('no-data-table').classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingSpinner.classList.add('d-none');
+                    alert('Terjadi kesalahan saat mencari data.');
+                });
+            });
+
+            downloadTableBtn.addEventListener('click', downloadPDF);
+            downloadDailyTableBtn.addEventListener('click', downloadPDF);
+        });
+    </script>
+</body>
+</html>

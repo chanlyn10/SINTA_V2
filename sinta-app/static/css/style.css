@@ -1,0 +1,49 @@
+/* Custom CSS untuk menyesuaikan tampilan */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.card {
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* === Gaya Header Baru === */
+/* Gunakan warna biru kustom ini */
+.header-custom-blue {
+    background-color: #395493; /* Warna biru sesuai sampel */
+}
+
+/* Gaya untuk logo */
+.bmkg-logo {
+    width: 35px; /* Sesuaikan ukuran logo */
+    height: 35px;
+}
+
+.nav-link {
+    color: #6c757d;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+}
+
+/* === Gaya Footer === */
+.footer {
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    margin-top: auto;
+}
