@@ -1,0 +1,50 @@
+SELECT * FROM public.fact_data_fklim
+order by updated_at DESC
+
+SELECT * FROM public.fact_data_fklim
+order by data_timestamp ASC
+
+DELETE FROM fact_data_fklim
+WHERE updated_at::date = CURRENT_DATE;
+
+SELECT
+    station_sk_id,
+    COUNT(temp_07lt_c) AS count_temp_07lt_c,
+    COUNT(temp_13lt_c) AS count_temp_13lt_c,
+    COUNT(temp_18lt_c) AS count_temp_18lt_c,
+    COUNT(temp_avg_c) AS count_temp_avg_c,
+    COUNT(temp_max_c) AS count_temp_max_c,
+    COUNT(temp_min_c) AS count_temp_min_c,
+    COUNT(rainfall_mm) AS count_rainfall_mm,
+    COUNT(sunshine_h) AS count_sunshine_h,
+    COUNT(weather_specific) AS count_weather_specific,
+    COUNT(pressure_mb) AS count_pressure_mb,
+    COUNT(rel_humidity_07lt_pc) AS count_rel_humidity_07lt_pc,
+    COUNT(rel_humidity_13lt_pc) AS count_rel_humidity_13lt_pc,
+    COUNT(rel_humidity_18lt_pc) AS count_rel_humidity_18lt_pc,
+    COUNT(rel_humidity_avg_pc) AS count_rel_humidity_avg_pc,
+    COUNT(wind_speed_avg_km_h) AS count_wind_speed_avg_km_h,
+    COUNT(wind_dir_max) AS count_wind_dir_max,
+    COUNT(wind_speed_max_knots) AS count_wind_speed_max_knots,
+    COUNT(wind_dir_cardinal) AS count_wind_dir_cardinal
+FROM
+    fact_data_fklim
+WHERE
+    EXTRACT(YEAR FROM data_timestamp) = 2024
+    AND EXTRACT(MONTH FROM data_timestamp) = 1
+GROUP BY
+    station_sk_id
+ORDER BY
+    station_sk_id;
+
+
+
+SELECT 
+    COUNT(*)
+FROM fact_data_fklim AS f
+JOIN dim_stations AS s ON f.station_sk_id = s.station_sk_id
+JOIN dim_geo_kabupaten AS k ON s.kabupaten_id = k.kabupaten_id
+JOIN dim_geo_propinsi AS p ON k.propinsi_id = p.propinsi_id
+WHERE 
+    p.region_id = 5 AND 
+    f.data_timestamp BETWEEN (CURRENT_DATE - INTERVAL '7 days') AND CURRENT_DATE;
